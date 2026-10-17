@@ -1,5 +1,11 @@
 # MeshCentral
 
+## ZOOMsoft-Fernwartung für macOS
+
+Die ZOOMsoft-Anpassungen werden in diesem Fork im Branch `zoomsoft/macos-fernwartung` gepflegt.
+[Erstellung und Verwendung](tools/zoomsoft-macos/README.md) beschreibt den Bau der signierten
+Apps für Installation und Deinstallation mit ZOOMsoft-Logo und deutschen Dialogen.
+
 ## Table of Contents
 
 [About](#about)

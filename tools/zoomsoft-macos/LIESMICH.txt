@@ -1,0 +1,126 @@
+Fernwartung | ZOOMsoft GmbH
+Erstellung der angepassten macOS-Fassung
+
+1. Diesen Fork auf dem Mac im Branch zoomsoft/macos-fernwartung klonen:
+   git clone --branch zoomsoft/macos-fernwartung \
+     https://github.com/UlrichThiess/MeshCentral.git \
+     "$HOME/Downloads/MeshCentral-ZOOMsoft"
+2. Als Vorlage bleibt die bereits erstellte Datei erhalten:
+   ~/Downloads/MeshAgent-Fernwartung-signed.pkg
+3. Im Terminal ausführen:
+   bash "$HOME/Downloads/MeshCentral-ZOOMsoft/tools/zoomsoft-macos/Erstellen.command"
+
+Das Skript verwendet die vorhandenen Developer-ID-Zertifikate des Teams
+2RAC2R2HDC und das Schlüsselbundprofil meshcentral-notary. Es installiert
+und deinstalliert beim Erstellen nichts. Es benötigt macOS, die vorhandene
+Xcode-Installation, Python 3 und eine Internetverbindung zu Apple.
+
+Die Erstellung umfasst:
+- eine signierte App mit dem Anzeigenamen Fernwartung | ZOOMsoft GmbH;
+- das ZOOMsoft-Symbol in den üblichen Größen von 16 bis 1024 Pixeln;
+- deutsche eigene Dialoge und Pakettexte;
+- systemweite Installation und Deinstallation für alle Benutzer;
+- gleich aufgebaute, kompakte Dialoge für beide Vorgänge;
+- eine neue Administratorabfrage bei jedem Start eines Vorgangs;
+- die eindeutige Abschlussmeldung „Deinstallation abgeschlossen“;
+- zwei signierte und notarisierte PKGs, eingebettet in die Apps;
+- zwei signierte und notarisierte Apps für die Kunden mit den Namen
+  „Fernwartung | ZOOMsoft GmbH Installation“ und
+  „Fernwartung | ZOOMsoft GmbH Deinstallation“;
+- ein fertiges ZIP und den neuen Agenten für den Serverabgleich.
+
+Ergebnisordner:
+~/Downloads/ZOOMsoft-Fernwartung-Ergebnis
+
+WICHTIG: Vor der ersten Installation der neuen Fassung im Terminal ausführen:
+bash "$HOME/Downloads/ZOOMsoft-Fernwartung-Ergebnis/Server-aktualisieren.command"
+
+Das überträgt ausschließlich den neu signierten Universal-Agenten und startet
+MeshCentral neu. Bestehende Sitzungen werden dabei kurz unterbrochen.
+Eine vorhandene angepasste Serverdatei wird zuvor gesichert. Die Serveradressen
+und Pfade entsprechen der in diesem Gespräch geprüften Installation.
+
+Download für die Webseite:
+~/Downloads/ZOOMsoft-Fernwartung-Ergebnis/Fernwartung-ZOOMsoft-GmbH.zip
+
+Inhalt des Kundendownloads:
+- Fernwartung | ZOOMsoft GmbH Installation.app
+- Fernwartung | ZOOMsoft GmbH Deinstallation.app
+
+Das ZIP enthält ausschließlich die beiden Apps. Die benötigten signierten und
+notarisierten PKGs liegen jeweils innerhalb der App und werden von ihr ausgeführt.
+Die Anleitung liegt separat im Ergebnisordner und ist nicht Teil des Kundendownloads.
+Die Dialoge der macOS-Sicherheitsverwaltung folgen den macOS-Spracheinstellungen.
+Die eigenen Texte und Dialoge dieser Fassung sind immer Deutsch.
+
+Beide Startprogramme verwenden dieselbe kompakte Oberfläche:
+Bestätigung → Administratorabfrage → Fortschritt → Abschluss.
+Die Vorgänge gelten immer für den ganzen Mac. Eine Installation nur im
+Benutzerordner wird nicht angeboten. Der Administratorvorgang erhält bei jedem
+Start eine neue Kennung, damit die kurzzeitig gespeicherte AppleScript-Freigabe
+nicht erneut verwendet wird. Die Authentifizierung erfolgt durch macOS; je nach
+Systemeinstellung kann macOS dafür auch Touch ID anbieten.
+
+Installationsort und Freigaben:
+/Applications/Fernwartung | ZOOMsoft GmbH.app
+
+Die vorhandenen Agentdaten bleiben bei der Installation unter
+/usr/local/mesh_services/meshagent/meshagent erhalten. Der Agent wird mit
+--configUsesCWD=1 gestartet, damit Datenbank und Protokolle außerhalb der
+signierten App liegen. Die bestehende Geräteidentität wird dadurch übernommen.
+Die .msh-Datei wird aus der lokalen Paketvorlage übernommen; Server- und
+Gruppenzuordnung bleiben erhalten. Der sichtbare Name wird angepasst.
+
+Wegen der neuen App-Identität müssen Bildschirmaufnahme und Bedienung einmal
+für Fernwartung | ZOOMsoft GmbH bestätigt werden. Alte meshagent-Einträge
+werden von macOS nicht automatisch umbenannt und können in den
+Datenschutzeinstellungen entfernt werden. Die neue App lässt sich bei Bedarf
+über die Plus-Schaltfläche aus Programme hinzufügen.
+
+Die Deinstallation entfernt die App, die zugehörigen Dienste und die lokalen
+Verbindungsdaten. Sie setzt ausschließlich die Freigaben dieser App bei den
+angemeldeten Benutzern zurück. Ein Fehler beim Entfernen wird nicht als
+erfolgreiche Deinstallation gemeldet.
+
+Vor Kundenauslieferung auf einem Test-Mac prüfen:
+1. Aus dem fertigen ZIP mit „Fernwartung | ZOOMsoft GmbH Installation.app“ installieren.
+2. Namen und Logo unter Datenschutz & Sicherheit prüfen.
+3. Bildschirmaufnahme und Bedienung für die neue App erlauben.
+4. Verbindung, Bildschirm, Maus, Tastatur und erneute Verbindung prüfen.
+5. Mit „Fernwartung | ZOOMsoft GmbH Deinstallation.app“ entfernen und den deutschen Abschluss prüfen.
+6. Beide Vorgänge zweimal direkt nacheinander starten und die Administratorabfrage
+   jeweils abbrechen. Auch der zweite Start muss erneut die Freigabe anfordern.
+7. Mit einem zweiten Benutzer prüfen: Die App steht auch dort zur Verfügung und
+   die Deinstallation entfernt sie für alle Benutzer. Datenschutzfreigaben sind
+   weiterhin bei den jeweiligen Benutzern zu bestätigen.
+
+Die Erstellungsdateien wurden unter Linux auf Syntax und Struktur geprüft.
+Kompilierung, Signierung, Notarisierung und der Funktionstest müssen auf dem
+Mac erfolgen; diese Prüfungen sind hier noch nicht ausgeführt worden.
+
+Die Mindestversionen des Agenten werden aus der Vorlage übernommen:
+Der bisherige Agent benötigt Intel macOS 15.0 bzw. Apple Silicon macOS 26.0.
+Das Verpacken senkt diese Mindestversionen nicht.
+
+Erneutes Erstellen mit neuem Ergebnisordner:
+bash "$HOME/Downloads/MeshCentral-ZOOMsoft/tools/zoomsoft-macos/Erstellen.command" \
+  --ausgabe "$HOME/Downloads/ZOOMsoft-Fernwartung-Ergebnis-2"
+
+Andere Vorlage:
+bash "$HOME/Downloads/MeshCentral-ZOOMsoft/tools/zoomsoft-macos/Erstellen.command" \
+  --vorlage "/vollstaendiger/Pfad/zur/Vorlage.pkg" \
+  --ausgabe "$HOME/Downloads/ZOOMsoft-Fernwartung-Ergebnis-3"
+
+Neue Downloads aus der MeshCentral-Konsole werden durch dieses Skript nicht
+automatisch als angepasste Pakete signiert. Für Kunden das erzeugte ZIP nutzen.
+Bei einer neuen Agentversion die App und Pakete neu erstellen und anschließend
+den Übergang für bereits installierte App-Fassungen planen. Ein späterer
+Austausch der Universal-Datei verändert den Hashabgleich aller Mac-Agenten.
+Ein App-Update muss deshalb die vollständige signierte App verteilen; ein
+einzelner Standalone-Agent darf ihre signierte Hauptdatei nicht ersetzen.
+
+Technische Grundlagen:
+https://developer.apple.com/forums/thread/678819
+https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html
+https://developer.apple.com/library/archive/technotes/tn2065/_index.html
+https://github.com/Ylianst/MeshAgent/blob/master/meshcore/agentcore.c

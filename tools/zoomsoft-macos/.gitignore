@@ -1,0 +1,6 @@
+# Lokale Ergebnisse der macOS-Paketerstellung
+*.app/
+*.pkg
+*.zip
+__pycache__/
+*.pyc
