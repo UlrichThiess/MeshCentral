@@ -5,6 +5,7 @@
 #import <dispatch/dispatch.h>
 #include <signal.h>
 #include <unistd.h>
+#include "Verbindungsstatus.h"
 
 static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 
@@ -14,6 +15,7 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 @property(nonatomic, strong) NSTextField *screenStatus;
 @property(nonatomic, strong) NSTextField *inputStatus;
 @property(nonatomic, strong) NSButton *retryButton;
+@property(nonatomic, strong) NSURL *logURL;
 @property(nonatomic, strong) NSTask *guardian;
 @property(nonatomic, strong) NSPipe *control;
 @property(nonatomic, strong) NSFileHandle *reader;
@@ -22,7 +24,6 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 @property(nonatomic, strong) NSMutableArray *signalSources;
 @property(nonatomic, assign) BOOL quitting;
 @property(nonatomic, assign) BOOL connected;
-@property(nonatomic, assign) BOOL authenticated;
 @property(nonatomic, copy) NSString *sessionError;
 - (void)start;
 - (void)permissions;
@@ -65,13 +66,13 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
     NSBundle *bundle = [NSBundle mainBundle];
     for (NSRunningApplication *app in [NSRunningApplication runningApplicationsWithBundleIdentifier:bundle.bundleIdentifier]) {
         if (app.processIdentifier != getpid()) {
-            [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+            [app activateWithOptions:0];
             [NSApp terminate:nil];
             return;
         }
     }
     [self menu];
-    [NSApp activateIgnoringOtherApps:YES];
+    [NSApp activate];
     NSString *path = bundle.bundlePath;
     if ([path hasPrefix:@"/Volumes/"] || [path containsString:@"/AppTranslocation/"]) {
         NSAlert *alert = [[NSAlert alloc] init];
@@ -115,6 +116,7 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
     hint.textColor = NSColor.secondaryLabelColor;
     self.retryButton = [self button:@"Erneut verbinden" action:@selector(erneut:) x:28 y:24 width:180];
     self.retryButton.enabled = NO;
+    [self button:@"Protokoll öffnen" action:@selector(protokoll:) x:214 y:24 width:126];
     [self button:@"Fernwartung beenden" action:@selector(beenden:) x:352 y:24 width:220];
     [self.window makeKeyAndOrderFront:nil];
     [self permissions];
@@ -183,9 +185,9 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
         return;
     }
     self.outputBuffer = [NSMutableData data];
+    self.logURL = [data URLByAppendingPathComponent:@"sitzung.log"];
     self.sessionError = nil;
     self.connected = NO;
-    self.authenticated = NO;
     self.control = [NSPipe pipe];
     NSPipe *output = [NSPipe pipe];
     self.reader = output.fileHandleForReading;
@@ -200,7 +202,12 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
     __weak Assistant *weakSelf = self;
     __weak NSTask *weakTask = task;
     self.reader.readabilityHandler = ^(NSFileHandle *handle) {
-        NSData *bytes = [handle readDataUpToLength:16384 error:NULL];
+        /* Read only currently available pipe data. readDataUpToLength: can wait
+         * for its requested byte count while the long-lived agent keeps the pipe open.
+         */
+        NSData *bytes = nil;
+        @try { bytes = handle.availableData; }
+        @catch (NSException *exception) { (void)exception; }
         if (bytes.length == 0) { handle.readabilityHandler = nil; return; }
         dispatch_async(dispatch_get_main_queue(), ^{
             Assistant *strongSelf = weakSelf;
@@ -248,28 +255,23 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
         NSString *line = [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
         line = [line stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
         consumed = index + 1;
-        if ([line isEqualToString:@"Authentication Complete..."]) {
-            self.authenticated = YES;
-        } else if ([line isEqualToString:@"Connected."]) {
+        ZSStatus state = zs_verbindungsstatus(line.UTF8String);
+        if (state == ZS_VERBUNDEN) {
             self.connected = YES;
-        } else if ([line hasPrefix:@"Control Channel Disconnected"] ||
-                   [line hasPrefix:@"Mesh Server Connection Error"] ||
-                   [line hasPrefix:@"Connecting to"] || [line hasPrefix:@"Attempting to connect"] ) {
+        } else if (state == ZS_VERBINDET) {
             self.status.stringValue = @"Verbindung wird aufgebaut …";
             self.status.textColor = NSColor.systemOrangeColor;
             self.connected = NO;
-            self.authenticated = NO;
         } else if ([line hasPrefix:@"ZOOMSOFT:ERROR "]) {
+            self.connected = NO;
             self.sessionError = [line substringFromIndex:15];
             [self failure:self.sessionError];
-        } else if ([line isEqualToString:@"Bad server certificate hash"] ||
-                   [line isEqualToString:@"Invalid server signature"]) {
+        } else if (state == ZS_FEHLER) {
             self.status.stringValue = @"Server konnte nicht bestätigt werden";
             self.status.textColor = NSColor.systemRedColor;
             self.connected = NO;
-            self.authenticated = NO;
         }
-        if (self.connected && self.authenticated) {
+        if (self.connected) {
             self.status.stringValue = @"Mit ZOOMsoft verbunden";
             self.status.textColor = NSColor.systemGreenColor;
         }
@@ -286,6 +288,13 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 
 - (void)erneut:(id)sender { (void)sender; [self start]; }
 - (void)beenden:(id)sender { (void)sender; [NSApp terminate:nil]; }
+
+- (void)protokoll:(id)sender {
+    (void)sender;
+    if (self.logURL && [[NSFileManager defaultManager] fileExistsAtPath:self.logURL.path]) {
+        [[NSWorkspace sharedWorkspace] openURL:self.logURL];
+    }
+}
 
 - (void)closeControl {
     NSFileHandle *writer = self.control.fileHandleForWriting;

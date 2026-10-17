@@ -19,7 +19,7 @@ PRODUCT = "Fernwartung | ZOOMsoft GmbH"
 APP_NAME = PRODUCT + " Assistant.app"
 BUNDLE_ID = "de.zoomsoft.fernwartung.assistant"
 VOLUME = "ZOOMsoft Fernwartung"
-VERSION = "1.0"
+VERSION = "1.1"
 NETWORK_KEYS = {
     "MeshName", "MeshType", "MeshID", "ServerID", "MeshServer",
     "WebProxy", "autoproxy", "ignoreProxyFile",
@@ -72,7 +72,7 @@ def sources(args, working):
 
 def minimum_versions(agent):
     data = agent.read_bytes()
-    for feature in (b"configUsesCWD", b"disableUpdate", b"controlChannelDebug"):
+    for feature in (b"configUsesCWD", b"disableUpdate", b"controlChannelDebug", b"-kvmagent"):
         if feature not in data:
             raise ValueError("Der Agent unterstützt eine benötigte Funktion nicht: " + feature.decode())
     minimums = {}
@@ -245,6 +245,8 @@ def main():
         "agent_quelle_sha256": hashlib.sha256(agent.read_bytes()).hexdigest(),
         "datenverzeichnis": "~/Library/Application Support/" + BUNDLE_ID,
         "agent_modus": "connect --configUsesCWD=1 --disableUpdate=1 --controlChannelDebug=1",
+        "bildschirm_modus": "-kvmagent /tmp/meshagent-kvm-<uid>.sock (nur während der Sitzung)",
+        "sitzungsprotokoll": "~/Library/Application Support/" + BUNDLE_ID + "/sitzung.log",
     }, ensure_ascii=False, indent=2) + "\n")
     print("\n" + PRODUCT + ": Assistant-DMG erstellt und notarisiert.", flush=True)
     print("Kundendownload:", target)

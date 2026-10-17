@@ -10,6 +10,15 @@ oder ein Wechsel zu einer anderen App lässt sie weiterlaufen. Ein eigener
 Sitzungswächter stoppt den Agenten und seine Prozessgruppe auch dann, wenn der
 App-Prozess abstürzt oder sofort beendet wird.
 
+Version **1.1** startet vor der Serververbindung zusätzlich den Bildschirmprozess
+des Agenten (`-kvmagent`) in der angemeldeten GUI-Sitzung. Er gehört zur App-Sitzung
+und wird mit ihr beendet. Ein bereits erreichbarer Bildschirmprozess desselben
+Benutzers wird mitbenutzt und beim Schließen der App nicht beendet. Ein verwaister
+Socket wird vor dem Start entfernt; fremde Dateien werden nicht überschrieben.
+
+Die Statusanzeige liest Agentenausgaben sofort und erkennt die bestätigte
+Verbindung auch ohne die optionale Debugmeldung „Authentication Complete…“.
+
 Der Kunde erhält eine DMG mit:
 
 - **Fernwartung | ZOOMsoft GmbH Assistant.app**
@@ -33,7 +42,7 @@ Aus dem Repository-Stamm auf dem Mac ausführen:
 
 ```bash
 bash tools/zoomsoft-macos-assistant/Erstellen.command \
-  --ausgabe "$HOME/Downloads/ZOOMsoft-Assistant-Ergebnis"
+  --ausgabe "$HOME/Downloads/ZOOMsoft-Assistant-Ergebnis-1.1"
 ```
 
 Bei einem weiteren Build einen neuen Ausgabeordner angeben. Standardvorlage ist
@@ -63,7 +72,7 @@ ein angeheftetes Notarisierungsticket für den Offline-Start.
 Ergebnis:
 
 ```text
-~/Downloads/ZOOMsoft-Assistant-Ergebnis/Fernwartung-ZOOMsoft-GmbH-Assistant.dmg
+~/Downloads/ZOOMsoft-Assistant-Ergebnis-1.1/Fernwartung-ZOOMsoft-GmbH-Assistant.dmg
 ```
 
 Zusätzlich entstehen eine SHA-256-Prüfsumme und ein Erstellungsbericht. Die
@@ -89,6 +98,11 @@ enthalten die eigene Geräteidentität dieses Clients und ermöglichen erneute
 Verbindungen. Bei geschlossener App läuft dort kein Dienst. Zum vollständigen
 Entfernen können die App und dieses persönliche Datenverzeichnis gelöscht werden.
 
+Über **Protokoll öffnen** lässt sich `sitzung.log` in diesem Verzeichnis anzeigen.
+Es enthält die Ausgaben von Bildschirmprozess und Agent sowie Start- und
+Fehlermeldungen. Das Protokoll bleibt lokal, ist nur für den Benutzer lesbar,
+wird bei jedem Sitzungsstart ersetzt und ist auf 1 MiB begrenzt.
+
 Der temporäre Client hat eine eigene Bundle-ID und eine eigene Geräteidentität.
 Ein bisher dauerhaft installierter Agent ist eine separate Verbindung; für den
 Abschalttest muss dieser unabhängig beendet sein.
@@ -98,7 +112,8 @@ Abschalttest muss dieser unabhängig beendet sein.
 | Datei | Aufgabe |
 | --- | --- |
 | `Assistant.m` | Native Oberfläche, Freigaben und App-Lebenszyklus |
-| `Sitzungswaechter.c` | Start des Agenten, Elternüberwachung und Aufräumen der Sitzung |
+| `Verbindungsstatus.h` | Erkennung der Verbindungs- und Fehlermeldungen |
+| `Sitzungswaechter.c` | Bildschirmprozess, Agent, Elternüberwachung und Aufräumen der Sitzung |
 | `DMGHintergrund.m` | Deutscher DMG-Hintergrund mit Logo und Pfeil |
 | `erstellen.py` | Konfiguration, Universal-Build, Signatur, DMG-Ansicht und Notarisierung |
 | `test_assistant.py` | Prozess- und Konfigurationstests ohne Netzwerk oder Installation |
@@ -110,13 +125,24 @@ Stoppsignal ignoriert, wird beendet. Eine zweite Instanz übernimmt keine aktive
 Sitzung; fremde Prozesse bleiben aktiv. Update- und Dienstparameter aus der
 Vorlage werden nicht in die portable Konfiguration übernommen.
 
-Auf Linux ausführbar:
+Zusätzlich prüfen sie den Start des Bildschirmprozesses vor der Serververbindung,
+Abbruch und Fehler während seines Starts, sein unerwartetes Ende, die Mitbenutzung
+eines vorhandenen Listeners und den Umgang mit verwaisten oder ersetzten Sockets.
+Die Statusprüfungen verwenden den produktiven Parser mit Verbindungs-, Retry- und
+Fehlerausgaben; kurze Ausgaben und Protokolle müssen während einer laufenden
+Sitzung ankommen.
+
+Auf Linux und macOS ausführbar, ohne Installation und ohne Serververbindung:
 
 ```bash
 python3 tools/zoomsoft-macos-assistant/test_assistant.py
 ```
 
-**Noch auf dem Mac erforderlich:** Kompilierung der Cocoa-Oberfläche, Finder-Ansicht,
+In Umgebungen, die lokale Unix-Sockets verbieten, werden die darauf angewiesenen
+Tests mit Begründung übersprungen. Alle Test-Sockets verwenden ein eigenes
+temporäres Verzeichnis; der echte Bildschirmkanal des Benutzers bleibt unberührt.
+
+**Für Version 1.1 noch auf dem Mac erforderlich:** Kompilierung der Cocoa-Oberfläche,
 Apple-Signierung und Notarisierung sowie der vollständige Funktionstest mit dem
 realen Agenten. Die Linux-Prüfungen bestätigen diese macOS-Funktionen nicht.
 
@@ -134,5 +160,6 @@ Vor dem Kundeneinsatz auf einem Test-Mac prüfen:
 
 - [MeshAgent-Konsole und temporärer Modus](https://github.com/Ylianst/MeshAgent/blob/26846b1c7f0841d71938f6bebc96eef5a947d217/meshconsole/main.c)
 - [Konfiguration, Update-Sperre und Verbindungsstatus](https://github.com/Ylianst/MeshAgent/blob/26846b1c7f0841d71938f6bebc96eef5a947d217/meshcore/agentcore.c)
+- [macOS-Bildschirmprozess und Benutzer-Socket](https://github.com/Ylianst/MeshAgent/blob/26846b1c7f0841d71938f6bebc96eef5a947d217/meshcore/KVM/MacOS/mac_kvm.c)
 - [Apples Paketierung von Mac-Software](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution)
 - [Apples Notarisierungsablauf](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)
