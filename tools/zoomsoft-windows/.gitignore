@@ -1,0 +1,10 @@
+bin/
+obj/
+Ergebnis*/
+*.exe
+*.msh
+*.pfx
+*.p12
+*.cer
+*.log
+*.zip

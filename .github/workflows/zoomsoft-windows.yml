@@ -1,0 +1,35 @@
+name: ZOOMsoft Windows client
+on:
+  push:
+    branches: [zoomsoft/macos-fernwartung]
+    paths:
+      - 'tools/zoomsoft-windows/**'
+      - 'tools/zoomsoft-macos/assets/ZOOMsoft.png'
+      - 'meshagent.js'
+      - '.github/workflows/zoomsoft-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            tools/zoomsoft-windows
+            tools/zoomsoft-macos/assets
+      - name: Temporary device cleanup
+        run: node --test tools/zoomsoft-windows/test_temporarer_agent.js
+      - name: Compile, test process lifecycle and render window
+        shell: powershell
+        run: .\tools\zoomsoft-windows\Pruefen.ps1 -Ausgabe "$env:RUNNER_TEMP\zoomsoft-windows-tests"
+      - name: Window preview
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ZOOMsoft-Windows-Fenstervorschau
+          path: ${{ runner.temp }}/zoomsoft-windows-tests/Fenstervorschau.png
+          if-no-files-found: ignore
+          retention-days: 7
