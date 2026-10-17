@@ -49,13 +49,13 @@ class SettingsTests(unittest.TestCase):
     source = "MeshName=Test\nMeshType=2\nMeshID=0x1234\nServerID=ABCDEF\nMeshServer=wss://assist.example.invalid/agent.ashx\n"
 
     def test_preserves_trust_and_overrides_service_update_policy(self):
-        source = self.source + "disableUpdate=0\nforceUpdate=1\nAgentCapabilities=0\nStartupType=1\nnoUpdateCoreModule=1\n"
+        source = self.source + "disableUpdate=0\nforceUpdate=1\nAgentCapabilities=0\nStartupType=1\nnoUpdateCoreModule=1\ncontrolChannelDebug=1\n"
         result = build.connection_settings(source)
         values = dict(line.split("=", 1) for line in result.splitlines())
         self.assertEqual(values["ServerID"], "ABCDEF")
         self.assertEqual(values["MeshID"], "0x1234")
         self.assertEqual(values["disableUpdate"], "1")
-        self.assertEqual(values["controlChannelDebug"], "1")
+        self.assertNotIn("controlChannelDebug", values)
         self.assertNotIn("StartupType", values)
         self.assertNotIn("forceUpdate", values)
         self.assertNotIn("AgentCapabilities", values)
@@ -251,7 +251,9 @@ while True: time.sleep(1)
             pid = int(path.read_text())
             wait_until(lambda: not running(pid))
 
-    def test_connection_output_and_local_log_arrive_while_agent_is_running(self):
+    def test_connection_output_arrives_without_retaining_a_session_log(self):
+        log = self.data / "sitzung.log"
+        log.write_text("Obsolete session log")
         process = self.start()
         output = b""
         deadline = time.monotonic() + 2
@@ -261,9 +263,7 @@ while True: time.sleep(1)
                 output += os.read(process.stdout.fileno(), 4096)
         self.assertIn(b"Connected.", output)
         self.assertIsNone(process.poll())
-        log = self.data / "sitzung.log"
-        self.assertIn("Connected.", log.read_text())
-        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        self.assertFalse(log.exists())
 
     def test_screen_starts_before_agent_and_stops_with_session(self):
         process = self.start(screen=True)

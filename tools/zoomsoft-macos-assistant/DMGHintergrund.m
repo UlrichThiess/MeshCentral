@@ -26,7 +26,7 @@ int main(int argc, const char *argv[]) {
         NSImage *logo = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:argv[1]]];
         [logo drawInRect:NSMakeRect(24, 348, 64, 64) fromRect:NSZeroRect
             operation:NSCompositingOperationSourceOver fraction:1];
-        text(@"Fernwartung | ZOOMsoft GmbH", NSMakeRect(92, 370, 600, 40), 25, YES, ink);
+        text(@"Ferwartung | ZOOMsoft GmbH", NSMakeRect(92, 370, 600, 40), 25, YES, ink);
         text(@"Ziehen Sie die App in „Programme“.", NSMakeRect(80, 320, 560, 32), 20, NO, ink);
         [[NSColor colorWithCalibratedRed:0.16 green:0.40 blue:0.70 alpha:1] setStroke];
         NSBezierPath *arrow = [NSBezierPath bezierPath];

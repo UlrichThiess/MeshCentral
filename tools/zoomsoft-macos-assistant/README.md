@@ -1,4 +1,4 @@
-# Fernwartung | ZOOMsoft GmbH – macOS-Assistant
+# Ferwartung | ZOOMsoft GmbH – macOS
 
 Dieser separate native macOS-Client verwendet den temporären `connect`-Modus des
 MeshAgent. Beim Öffnen der App beginnt die Verbindung zum MeshCentral-Server aus
@@ -10,7 +10,7 @@ oder ein Wechsel zu einer anderen App lässt sie weiterlaufen. Ein eigener
 Sitzungswächter stoppt den Agenten und seine Prozessgruppe auch dann, wenn der
 App-Prozess abstürzt oder sofort beendet wird.
 
-Version **1.1** startet vor der Serververbindung zusätzlich den Bildschirmprozess
+Die App startet vor der Serververbindung zusätzlich den Bildschirmprozess
 des Agenten (`-kvmagent`) in der angemeldeten GUI-Sitzung. Er gehört zur App-Sitzung
 und wird mit ihr beendet. Ein bereits erreichbarer Bildschirmprozess desselben
 Benutzers wird mitbenutzt und beim Schließen der App nicht beendet. Ein verwaister
@@ -19,9 +19,15 @@ Socket wird vor dem Start entfernt; fremde Dateien werden nicht überschrieben.
 Die Statusanzeige liest Agentenausgaben sofort und erkennt die bestätigte
 Verbindung auch ohne die optionale Debugmeldung „Authentication Complete…“.
 
+Version **1.2** verwendet den App-Namen **Ferwartung | ZOOMsoft GmbH**. Das
+Sitzungsprotokoll und die Schaltfläche zum Öffnen sind entfernt. Eine vorhandene
+`sitzung.log` aus Version 1.1 wird beim nächsten Sitzungsstart gelöscht. Die
+Bundle-ID bleibt erhalten, damit Geräteidentität und Freigaben weiter zugeordnet
+werden können.
+
 Der Kunde erhält eine DMG mit:
 
-- **Fernwartung | ZOOMsoft GmbH Assistant.app**
+- **Ferwartung | ZOOMsoft GmbH.app**
 - einer Verknüpfung zu **Programme**
 - einem deutschen Hintergrund: **Ziehen Sie die App in „Programme“.**
 
@@ -42,7 +48,7 @@ Aus dem Repository-Stamm auf dem Mac ausführen:
 
 ```bash
 bash tools/zoomsoft-macos-assistant/Erstellen.command \
-  --ausgabe "$HOME/Downloads/ZOOMsoft-Assistant-Ergebnis-1.1"
+  --ausgabe "$HOME/Downloads/ZOOMsoft-Ferwartung-Ergebnis-1.2"
 ```
 
 Bei einem weiteren Build einen neuen Ausgabeordner angeben. Standardvorlage ist
@@ -56,7 +62,7 @@ Alternativ können Agent und Konfiguration direkt angegeben werden:
 bash tools/zoomsoft-macos-assistant/Erstellen.command \
   --agent "/Pfad/zum/meshagent" \
   --konfiguration "/Pfad/zur/meshagent.msh" \
-  --ausgabe "$HOME/Downloads/ZOOMsoft-Assistant-Ergebnis-2"
+  --ausgabe "$HOME/Downloads/ZOOMsoft-Ferwartung-Ergebnis-2"
 ```
 
 Benötigt werden macOS mit angemeldeter Finder-Sitzung, Xcode-Werkzeuge, Python 3,
@@ -72,7 +78,7 @@ ein angeheftetes Notarisierungsticket für den Offline-Start.
 Ergebnis:
 
 ```text
-~/Downloads/ZOOMsoft-Assistant-Ergebnis-1.1/Fernwartung-ZOOMsoft-GmbH-Assistant.dmg
+~/Downloads/ZOOMsoft-Ferwartung-Ergebnis-1.2/Ferwartung-ZOOMsoft-GmbH.dmg
 ```
 
 Zusätzlich entstehen eine SHA-256-Prüfsumme und ein Erstellungsbericht. Die
@@ -97,11 +103,6 @@ unter `~/Library/Application Support/de.zoomsoft.fernwartung.assistant/`. Sie
 enthalten die eigene Geräteidentität dieses Clients und ermöglichen erneute
 Verbindungen. Bei geschlossener App läuft dort kein Dienst. Zum vollständigen
 Entfernen können die App und dieses persönliche Datenverzeichnis gelöscht werden.
-
-Über **Protokoll öffnen** lässt sich `sitzung.log` in diesem Verzeichnis anzeigen.
-Es enthält die Ausgaben von Bildschirmprozess und Agent sowie Start- und
-Fehlermeldungen. Das Protokoll bleibt lokal, ist nur für den Benutzer lesbar,
-wird bei jedem Sitzungsstart ersetzt und ist auf 1 MiB begrenzt.
 
 Der temporäre Client hat eine eigene Bundle-ID und eine eigene Geräteidentität.
 Ein bisher dauerhaft installierter Agent ist eine separate Verbindung; für den
@@ -129,8 +130,8 @@ Zusätzlich prüfen sie den Start des Bildschirmprozesses vor der Serververbindu
 Abbruch und Fehler während seines Starts, sein unerwartetes Ende, die Mitbenutzung
 eines vorhandenen Listeners und den Umgang mit verwaisten oder ersetzten Sockets.
 Die Statusprüfungen verwenden den produktiven Parser mit Verbindungs-, Retry- und
-Fehlerausgaben; kurze Ausgaben und Protokolle müssen während einer laufenden
-Sitzung ankommen.
+Fehlerausgaben; kurze Statusausgaben müssen während einer laufenden Sitzung
+ankommen, ohne ein Sitzungsprotokoll aufzuzeichnen.
 
 Auf Linux und macOS ausführbar, ohne Installation und ohne Serververbindung:
 
@@ -142,7 +143,7 @@ In Umgebungen, die lokale Unix-Sockets verbieten, werden die darauf angewiesenen
 Tests mit Begründung übersprungen. Alle Test-Sockets verwenden ein eigenes
 temporäres Verzeichnis; der echte Bildschirmkanal des Benutzers bleibt unberührt.
 
-**Für Version 1.1 noch auf dem Mac erforderlich:** Kompilierung der Cocoa-Oberfläche,
+**Für Version 1.2 noch auf dem Mac erforderlich:** Kompilierung der Cocoa-Oberfläche,
 Apple-Signierung und Notarisierung sowie der vollständige Funktionstest mit dem
 realen Agenten. Die Linux-Prüfungen bestätigen diese macOS-Funktionen nicht.
 

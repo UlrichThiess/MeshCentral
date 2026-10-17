@@ -31,8 +31,6 @@
 
 extern char **environ;
 static volatile sig_atomic_t stopping = 0;
-static int logfd = -1;
-static size_t logsize = 0;
 typedef struct { pid_t pid; int master; } Process;
 
 static void stop_signal(int value) { (void)value; stopping = 1; }
@@ -45,11 +43,6 @@ static long long milliseconds(void) {
 
 /* Never block cleanup if the GUI stops reading or is killed. */
 static void output(const char *data, size_t size) {
-    if (logfd >= 0 && logsize < 1024 * 1024) {
-        size_t count = size < 1024 * 1024 - logsize ? size : 1024 * 1024 - logsize;
-        ssize_t written = write(logfd, data, count);
-        if (written > 0) { logsize += (size_t)written; }
-    }
     while (size > 0) {
         ssize_t count = write(STDOUT_FILENO, data, size);
         if (count > 0) { data += count; size -= (size_t)count; }
@@ -115,7 +108,6 @@ static int spawn_process(char *agent, char *const args[], int lockfd, Process *p
     posix_spawn_file_actions_addclose(&files, master);
     posix_spawn_file_actions_addclose(&files, slave);
     posix_spawn_file_actions_addclose(&files, lockfd);
-    if (logfd >= 0) { posix_spawn_file_actions_addclose(&files, logfd); }
     posix_spawnattr_init(&attributes);
     sigset_t empty, defaults;
     sigemptyset(&empty);
@@ -247,7 +239,7 @@ static int start_screen(char *agent, int lockfd, pid_t parent, Bildschirm *scree
         }
     }
     if (stopping || getppid() != parent) { return 125; }
-    message("ZOOMSOFT:ERROR Der Bildschirmprozess ist nicht bereit. Details stehen im Protokoll.\n");
+    message("ZOOMSOFT:ERROR Der Bildschirmprozess ist nicht bereit. Bitte erneut verbinden.\n");
     return 71;
 }
 #endif
@@ -291,9 +283,8 @@ int main(int argc, char **argv) {
         if (lockfd >= 0) { close(lockfd); }
         return 73;
     }
-    logfd = open("sitzung.log", O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, 0600);
-    if (logfd >= 0) { fchmod(logfd, 0600); }
-    message("ZOOMsoft Assistant 1.1: Sitzung wird gestartet.\n");
+    /* Remove only this app's obsolete session log after taking its lock. */
+    (void)unlink("sitzung.log");
 #if defined(__APPLE__) || defined(ZOOMSOFT_TEST_KVM)
     char socket_path[104];
     snprintf(socket_path, sizeof(socket_path), "/tmp/meshagent-kvm-%u.sock", (unsigned)getuid());
@@ -309,13 +300,11 @@ int main(int argc, char **argv) {
             finish(screen.process.pid, screen.process.master);
             remove_owned_socket(&screen);
             close(lockfd);
-            if (logfd >= 0) { close(logfd); }
             return error == 125 ? 0 : error;
         }
     }
 #endif
-    char *args[] = { argv[2], "connect", "--configUsesCWD=1", "--disableUpdate=1",
-                     "--controlChannelDebug=1", NULL };
+    char *args[] = { argv[2], "connect", "--configUsesCWD=1", "--disableUpdate=1", NULL };
     Process engine = { -1, -1 };
     int error = spawn_process(argv[2], args, lockfd, &engine);
     if (error) {
@@ -325,7 +314,6 @@ int main(int argc, char **argv) {
         remove_owned_socket(&screen);
 #endif
         close(lockfd);
-        if (logfd >= 0) { close(logfd); }
         return 71;
     }
     message("ZOOMSOFT:STARTED\n");
@@ -367,6 +355,5 @@ int main(int argc, char **argv) {
 #endif
     close(lockfd);
     message("ZOOMSOFT:STOPPED\n");
-    if (logfd >= 0) { close(logfd); }
     return unexpected ? (status ? status : 1) : 0;
 }

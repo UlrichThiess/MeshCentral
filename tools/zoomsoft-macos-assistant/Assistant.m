@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "Verbindungsstatus.h"
 
-static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
+static NSString *const Produkt = @"Ferwartung | ZOOMsoft GmbH";
 
 @interface Assistant : NSObject <NSApplicationDelegate, NSWindowDelegate>
 @property(nonatomic, strong) NSWindow *window;
@@ -15,7 +15,6 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 @property(nonatomic, strong) NSTextField *screenStatus;
 @property(nonatomic, strong) NSTextField *inputStatus;
 @property(nonatomic, strong) NSButton *retryButton;
-@property(nonatomic, strong) NSURL *logURL;
 @property(nonatomic, strong) NSTask *guardian;
 @property(nonatomic, strong) NSPipe *control;
 @property(nonatomic, strong) NSFileHandle *reader;
@@ -116,7 +115,6 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
     hint.textColor = NSColor.secondaryLabelColor;
     self.retryButton = [self button:@"Erneut verbinden" action:@selector(erneut:) x:28 y:24 width:180];
     self.retryButton.enabled = NO;
-    [self button:@"Protokoll öffnen" action:@selector(protokoll:) x:214 y:24 width:126];
     [self button:@"Fernwartung beenden" action:@selector(beenden:) x:352 y:24 width:220];
     [self.window makeKeyAndOrderFront:nil];
     [self permissions];
@@ -185,7 +183,6 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
         return;
     }
     self.outputBuffer = [NSMutableData data];
-    self.logURL = [data URLByAppendingPathComponent:@"sitzung.log"];
     self.sessionError = nil;
     self.connected = NO;
     self.control = [NSPipe pipe];
@@ -288,13 +285,6 @@ static NSString *const Produkt = @"Fernwartung | ZOOMsoft GmbH";
 
 - (void)erneut:(id)sender { (void)sender; [self start]; }
 - (void)beenden:(id)sender { (void)sender; [NSApp terminate:nil]; }
-
-- (void)protokoll:(id)sender {
-    (void)sender;
-    if (self.logURL && [[NSFileManager defaultManager] fileExistsAtPath:self.logURL.path]) {
-        [[NSWorkspace sharedWorkspace] openURL:self.logURL];
-    }
-}
 
 - (void)closeControl {
     NSFileHandle *writer = self.control.fileHandleForWriting;

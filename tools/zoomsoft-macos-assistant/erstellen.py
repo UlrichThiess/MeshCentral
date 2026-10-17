@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Erstellt den separaten macOS-Assistant und eine signierte, notarisierte DMG."""
+"""Erstellt die macOS-Fernwartungsapp und eine signierte, notarisierte DMG."""
 
 import argparse
 import hashlib
@@ -15,11 +15,11 @@ import tempfile
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-PRODUCT = "Fernwartung | ZOOMsoft GmbH"
-APP_NAME = PRODUCT + " Assistant.app"
+PRODUCT = "Ferwartung | ZOOMsoft GmbH"
+APP_NAME = PRODUCT + ".app"
 BUNDLE_ID = "de.zoomsoft.fernwartung.assistant"
-VOLUME = "ZOOMsoft Fernwartung"
-VERSION = "1.1"
+VOLUME = PRODUCT
+VERSION = "1.2"
 NETWORK_KEYS = {
     "MeshName", "MeshType", "MeshID", "ServerID", "MeshServer",
     "WebProxy", "autoproxy", "ignoreProxyFile",
@@ -51,7 +51,7 @@ def connection_settings(source):
     server = urlsplit(settings["MeshServer"])
     if server.scheme != "wss" or not server.hostname or server.username or server.password:
         raise ValueError("Die Vorlage benötigt eine vollständige, verschlüsselte MeshServer-Adresse (wss://…).")
-    settings.update({"disableUpdate": "1", "controlChannelDebug": "1", "displayName": PRODUCT})
+    settings.update({"disableUpdate": "1", "displayName": PRODUCT})
     return "".join(key + "=" + value + "\n" for key, value in settings.items())
 
 
@@ -72,7 +72,7 @@ def sources(args, working):
 
 def minimum_versions(agent):
     data = agent.read_bytes()
-    for feature in (b"configUsesCWD", b"disableUpdate", b"controlChannelDebug", b"-kvmagent"):
+    for feature in (b"configUsesCWD", b"disableUpdate", b"-kvmagent"):
         if feature not in data:
             raise ValueError("Der Agent unterstützt eine benötigte Funktion nicht: " + feature.decode())
     minimums = {}
@@ -86,7 +86,7 @@ def minimum_versions(agent):
 
 
 def app_info(minimums):
-    info = shared.app_info(BUNDLE_ID, "Fernwartung", minimums, display_name=PRODUCT + " Assistant")
+    info = shared.app_info(BUNDLE_ID, "Fernwartung", minimums, display_name=PRODUCT)
     info.update({
         "CFBundleVersion": VERSION,
         "CFBundleShortVersionString": VERSION,
@@ -147,7 +147,7 @@ def make_dmg(app, working, output, identity):
     shared.run("/usr/bin/xcrun", "clang", "-fobjc-arc", "-framework", "Cocoa",
                "-Wall", "-Wextra", ROOT / "DMGHintergrund.m", "-o", renderer)
     shared.run(renderer, shared.ASSETS / "ZOOMsoft.png", stage / ".background/Anleitung.png")
-    rw = working / "assistant-beschreibbar.dmg"
+    rw = working / "fernwartung-beschreibbar.dmg"
     shared.run("/usr/bin/hdiutil", "create", "-srcfolder", stage, "-volname", VOLUME,
                "-fs", "HFS+", "-format", "UDRW", rw)
     mount = working / "laufwerk"
@@ -187,19 +187,19 @@ def main():
     parser.add_argument("--vorlage", type=Path, default=Path.home() / "Downloads/MeshAgent-Fernwartung-signed.pkg")
     parser.add_argument("--agent", type=Path, help="Alternativ: vorhandener Universal-Agent")
     parser.add_argument("--konfiguration", type=Path, help="Zugehörige meshagent.msh bei --agent")
-    parser.add_argument("--ausgabe", type=Path, default=Path.home() / "Downloads/ZOOMsoft-Assistant-Ergebnis")
+    parser.add_argument("--ausgabe", type=Path, default=Path.home() / "Downloads/ZOOMsoft-Ferwartung-Ergebnis")
     parser.add_argument("--app-zertifikat", default=shared.APP_IDENTITY)
     parser.add_argument("--notarprofil", default="meshcentral-notary")
     args = parser.parse_args()
     if sys.platform != "darwin":
-        raise ValueError("Der Assistant muss auf deinem Mac mit den Developer-ID-Zertifikaten erstellt werden.")
+        raise ValueError("Die Fernwartungsapp muss auf deinem Mac mit den Developer-ID-Zertifikaten erstellt werden.")
     args.ausgabe = args.ausgabe.expanduser().resolve()
     if args.ausgabe.exists():
         raise ValueError("Der Ausgabeordner existiert bereits. Bitte --ausgabe mit einem neuen Ordnernamen verwenden.")
     os.umask(0o022)
     for tool in ("clang", "notarytool", "vtool"):
         shared.run("/usr/bin/xcrun", "--find", tool, capture=True)
-    working = Path(tempfile.mkdtemp(prefix="zoomsoft-assistant-", dir=str(Path.home() / "Downloads")))
+    working = Path(tempfile.mkdtemp(prefix="zoomsoft-fernwartung-", dir=str(Path.home() / "Downloads")))
     print("Arbeitsverzeichnis:", working, flush=True)
     agent, configuration = sources(args, working)
     settings = connection_settings(configuration.read_text(encoding="utf-8-sig"))
@@ -216,7 +216,7 @@ def main():
     shutil.copy2(shared.icon(working), resources / "AppIcon.icns")
     shared.plist(app / "Contents/Info.plist", app_info(minimums))
     shared.write(resources / "de.lproj/InfoPlist.strings",
-                 'CFBundleDisplayName = "' + PRODUCT + ' Assistant";\n')
+                 'CFBundleDisplayName = "' + PRODUCT + '";\n')
     license_path = ROOT.parent.parent / "LICENSE"
     if license_path.is_file():
         shutil.copy2(license_path, resources / "LICENSE.txt")
@@ -231,8 +231,8 @@ def main():
     sign_binary(executable / "Sitzungswaechter", args.app_zertifikat, BUNDLE_ID + ".sitzung")
     shared.sign_app(app, args.app_zertifikat)
     # Staple the copied app itself for offline launches after dragging out of the DMG.
-    shared.notarize([app], working, args.notarprofil, "Assistant-App")
-    image = working / "Fernwartung-ZOOMsoft-GmbH-Assistant.dmg"
+    shared.notarize([app], working, args.notarprofil, "Fernwartungsapp")
+    image = working / "Ferwartung-ZOOMsoft-GmbH.dmg"
     make_dmg(app, working, image, args.app_zertifikat)
     notarize_dmg(image, working, args.notarprofil)
     args.ausgabe.mkdir(parents=True)
@@ -244,11 +244,10 @@ def main():
         "mindestversionen": minimums,
         "agent_quelle_sha256": hashlib.sha256(agent.read_bytes()).hexdigest(),
         "datenverzeichnis": "~/Library/Application Support/" + BUNDLE_ID,
-        "agent_modus": "connect --configUsesCWD=1 --disableUpdate=1 --controlChannelDebug=1",
+        "agent_modus": "connect --configUsesCWD=1 --disableUpdate=1",
         "bildschirm_modus": "-kvmagent /tmp/meshagent-kvm-<uid>.sock (nur während der Sitzung)",
-        "sitzungsprotokoll": "~/Library/Application Support/" + BUNDLE_ID + "/sitzung.log",
     }, ensure_ascii=False, indent=2) + "\n")
-    print("\n" + PRODUCT + ": Assistant-DMG erstellt und notarisiert.", flush=True)
+    print("\n" + PRODUCT + ": DMG erstellt und notarisiert.", flush=True)
     print("Kundendownload:", target)
     print("Auf dem Test-Mac: in Programme ziehen, starten, Freigaben bestätigen und Fernzugriff testen.")
     print("Fenster schließen, ⌘Q und sofortiges Beenden müssen die Verbindung beenden.")
