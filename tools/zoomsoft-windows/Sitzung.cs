@@ -73,6 +73,9 @@ namespace ZOOMsoft.Fernwartung
                     new IntPtr(IntPtr.Size), IntPtr.Zero, IntPtr.Zero));
                 var startup = new Native.STARTUPINFOEX();
                 startup.StartupInfo.cb = Marshal.SizeOf(startup);
+                // Explicit null standard handles prevent Windows duplicating
+                // a redirected parent's pipes instead of using the ConPTY.
+                startup.StartupInfo.dwFlags = 0x00000100; // STARTF_USESTDHANDLES
                 startup.lpAttributeList = attributes;
                 var command = new StringBuilder("\"" + executable + "\" " + arguments);
                 Check(Native.CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, false,

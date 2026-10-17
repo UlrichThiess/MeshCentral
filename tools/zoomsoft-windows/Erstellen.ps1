@@ -67,6 +67,7 @@ $settings = [ZOOMsoft.Fernwartung.Konfiguration]::Filtern($rawConfig)
 $logo = Join-Path $source '..\zoomsoft-macos\assets\ZOOMsoft.png'
 if (-not (Test-Path -LiteralPath $logo)) { throw 'Das ZOOMsoft-Logo fehlt. Bitte auch tools/zoomsoft-macos/assets aus dem Fork übernehmen.' }
 $logo = (Resolve-Path -LiteralPath $logo).Path
+$license = (Resolve-Path -LiteralPath (Join-Path $source '..\..\LICENSE')).Path
 $working = Join-Path ([IO.Path]::GetTempPath()) ('zoomsoft-windows-' + [Guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($working) | Out-Null
 try {
@@ -81,7 +82,8 @@ try {
     $arguments = @('/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/warnaserror+', '/codepage:65001',
         "/out:`"$program`"", "/win32icon:`"$iconPath`"", "/win32manifest:`"$(Join-Path $source 'app.manifest')`"",
         '/reference:System.dll', '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll',
-        "/resource:`"$enginePath`",meshagent.exe", "/resource:`"$settingsPath`",meshagent.msh", "/resource:`"$logo`",ZOOMsoft.png")
+        "/resource:`"$enginePath`",meshagent.exe", "/resource:`"$settingsPath`",meshagent.msh", "/resource:`"$logo`",ZOOMsoft.png",
+        "/resource:`"$license`",LICENSE.txt")
     foreach ($file in @('Konfiguration.cs', 'Verbindungsstatus.cs', 'Sitzung.cs', 'Fernwartung.cs')) {
         $arguments += '"' + (Join-Path $source $file) + '"'
     }

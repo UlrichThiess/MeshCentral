@@ -41,7 +41,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Die Paketierungsprüfung ist fehlgeschlagen.' 
 $exe = Join-Path $built 'Ferwartung-ZOOMsoft-GmbH.exe'
 $assembly = [Reflection.Assembly]::LoadFile($exe)
 $resources = $assembly.GetManifestResourceNames()
-foreach ($resource in @('meshagent.exe', 'meshagent.msh', 'ZOOMsoft.png')) {
+foreach ($resource in @('meshagent.exe', 'meshagent.msh', 'ZOOMsoft.png', 'LICENSE.txt')) {
     if ($resources -notcontains $resource) { throw ('In der EXE fehlt ' + $resource) }
 }
 if ([Diagnostics.FileVersionInfo]::GetVersionInfo($exe).ProductName -ne 'Ferwartung | ZOOMsoft GmbH') {

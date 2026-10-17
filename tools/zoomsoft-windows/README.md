@@ -67,6 +67,7 @@ Ergebnis:
 Der Kunde erhält nur diese EXE. Das Zeichen `|` steht im Fenstertitel; in einem
 Windows-Dateinamen ist es nicht erlaubt. Für einen weiteren Build einen neuen
 Ausgabeordner angeben. Prüfsumme und Erstellungsbericht dienen der Build-Prüfung.
+Der Apache-Lizenztext ist als Ressource in der EXE enthalten.
 
 Für eine Authenticode-Signatur optional `-ZertifikatThumbprint "…"` hinzufügen.
 Das zugehörige Windows-Codesignaturzertifikat mit privatem Schlüssel muss im
