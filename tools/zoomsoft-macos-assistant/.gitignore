@@ -1,0 +1,6 @@
+*.app/
+*.dmg
+*.zip
+*.pkg
+__pycache__/
+*.pyc

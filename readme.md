@@ -3,8 +3,11 @@
 ## ZOOMsoft-Fernwartung für macOS
 
 Die ZOOMsoft-Anpassungen werden in diesem Fork im Branch `zoomsoft/macos-fernwartung` gepflegt.
-[Erstellung und Verwendung](tools/zoomsoft-macos/README.md) beschreibt den Bau der signierten
-Apps für Installation und Deinstallation mit ZOOMsoft-Logo und deutschen Dialogen.
+
+- [Separater macOS-Assistant als DMG](tools/zoomsoft-macos-assistant/README.md): App öffnen verbindet,
+  Fenster schließen oder ⌘Q beendet die Sitzung. Mit ZOOMsoft-Logo und deutschen Dialogen.
+- [Dauerhaft installierter Agent](tools/zoomsoft-macos/README.md): bisherige signierte Apps für
+  Installation und Deinstallation.
 
 ## Table of Contents
 
